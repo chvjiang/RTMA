@@ -1,0 +1,39 @@
+network_module: hymotion/network/hymotion_mmdit.HunyuanMotionMMDiT
+network_module_args:
+  apply_rope_to_single_branch: false
+  ctxt_input_dim: 4096
+  dropout: 0.0
+  feat_dim: 1280
+  input_dim: 201
+  mask_mode: narrowband        # 训练 TM2M 时建议保留，避免参考泄漏
+  mlp_ratio: 4.0
+  num_heads: 20
+  num_layers: 27
+  time_factor: 1000.0
+  vtxt_input_dim: 768
+  with_ref_motion: true        # 必须与你的模型改动一致
+
+train_pipeline: hymotion/pipeline/motion_diffusion.MotionFlowMatching
+train_pipeline_args:
+  enable_ctxt_null_feat: true
+  mean_std_dir: ./stats/       # 指向你的 Mean.npy / Std.npy 目录
+  output_mesh_fps: 30
+  text_encoder_cfg:
+    llm_type: qwen3
+    max_length_llm: 128
+  text_encoder_module: hymotion/network/text_encoders/text_encoder.HYTextModel
+  train_frames: 360
+tm2m:
+  ref_shift_max: 150            # 最大时移帧数（2 秒 @30fps）
+  ref_shift_prob: 1.0          # 80% 概率构造参考，20% 退化为纯 T2M
+
+training:
+  batch_size: 4
+  lr: 5e-5                     # 微调从预训练权重出发，学习率要小
+  weight_decay: 0.01
+  epochs: 5000
+  grad_clip: 1.0
+  save_every: 500
+  log_every: 10
+  output_dir: ./output/tm2m_finetune_150r
+  mixed_precision: true
